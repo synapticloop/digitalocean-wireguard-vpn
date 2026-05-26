@@ -86,3 +86,8 @@ Create a WireGuard VPN
 █████████████████████████████████████
 █████████████████████████████████████
 ```
+
+cd /opt/wg-admin
+
+sudo systemctl restart wg-admin
+sudo -u wgadmin git pull
