@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<h2>Privacy settings</h2><p>Disable persistent logs if this appliance should avoid retaining operational history. Current WireGuard in-memory state may still be visible through <code>wg show</code> while the interface is running.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button>Save</button></form>{% endblock %}

@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>WG Admin</title>
+<style>body{font-family:system-ui,sans-serif;margin:2rem;max-width:1100px}nav a{margin-right:1rem}table{border-collapse:collapse;width:100%;margin-top:1rem}th,td{border-bottom:1px solid #ddd;padding:.5rem;text-align:left}.messages{padding:.5rem;background:#f4f4f4}pre,code{background:#f5f5f5;padding:.2rem .4rem}.danger{color:#b00020}.qr{max-width:320px;border:1px solid #ddd;padding:1rem}</style>
+</head><body>
+<h1>WG Admin</h1>
+<nav><a href="{% url 'dashboard' %}">Dashboard</a><a href="{% url 'user_list' %}">Users</a><a href="{% url 'usage_dashboard' %}">Usage</a><a href="{% url 'commit_config' %}">Commit</a><a href="{% url 'digitalocean_settings' %}">DigitalOcean</a><a href="{% url 'privacy_settings' %}">Privacy</a></nav>
+<p>Remote VPN IP: <code>{{ request.wg_remote_addr }}</code> · Identified user: <strong>{{ request.wg_user|default:'none' }}</strong></p>
+{% if messages %}<div class="messages">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>{% endif %}
+{% block content %}{% endblock %}</body></html>

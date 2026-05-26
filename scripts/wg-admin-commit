@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFACE="${WG_INTERFACE:-wg0}"
+CURRENT="/etc/wireguard/${IFACE}.conf"
+CANDIDATE="/run/wg-admin/${IFACE}.candidate.conf"
+BACKUP="/run/wg-admin/${IFACE}.rollback.conf"
+STRIPPED="/run/wg-admin/${IFACE}.stripped.conf"
+ROLLBACK_STRIPPED="/run/wg-admin/${IFACE}.rollback.stripped.conf"
+LOCK="/run/wg-admin/commit.lock"
+mkdir -p /run/wg-admin
+exec 9>"$LOCK"
+flock -n 9 || { echo "Another commit is running" >&2; exit 1; }
+[[ -f "$CANDIDATE" ]] || { echo "Candidate config missing: $CANDIDATE" >&2; exit 1; }
+[[ -f "$CURRENT" ]] || { echo "Current config missing: $CURRENT" >&2; exit 1; }
+cp "$CURRENT" "$BACKUP"
+chmod 600 "$BACKUP"
+wg-quick strip "$CANDIDATE" > "$STRIPPED"
+chmod 600 "$STRIPPED"
+rollback() {
+  echo "Rolling back WireGuard config" >&2
+  wg-quick strip "$BACKUP" > "$ROLLBACK_STRIPPED" || true
+  wg syncconf "$IFACE" "$ROLLBACK_STRIPPED" || true
+  install -m 600 -o root -g root "$BACKUP" "$CURRENT" || true
+}
+trap rollback ERR
+wg syncconf "$IFACE" "$STRIPPED"
+wg show "$IFACE" >/dev/null
+ip link show "$IFACE" >/dev/null
+install -m 600 -o root -g root "$CANDIDATE" "$CURRENT"
+trap - ERR
+echo "WireGuard config committed successfully"

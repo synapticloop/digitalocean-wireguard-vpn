@@ -1,0 +1,20 @@
+[Unit]
+Description=WG Admin Django application
+After=network.target wg-quick@wg0.service
+Wants=wg-quick@wg0.service
+
+[Service]
+User=wgadmin
+Group=wgadmin
+WorkingDirectory=/opt/wg-admin
+EnvironmentFile=/opt/wg-admin/.env
+ExecStart=/opt/wg-admin/.venv/bin/gunicorn wg_admin_project.wsgi:application --bind 127.0.0.1:8000 --workers 2
+Restart=on-failure
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/wg-admin /run/wg-admin /opt/wg-admin
+
+[Install]
+WantedBy=multi-user.target

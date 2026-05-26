@@ -1,0 +1,1 @@
+{% extends 'base.html' %}{% block content %}<h2>DigitalOcean settings</h2><p>Token: {% if settings_obj.token_secret %}configured ({{ settings_obj.token_secret.token_hint }}){% else %}not configured{% endif %}</p><form method="post">{% csrf_token %}{{ form.as_p }}<button>Save</button></form>{% endblock %}
