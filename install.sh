@@ -4,7 +4,7 @@ set -euo pipefail
 # Remote installer for synapticloop/digitalocean-wireguard-vpn.
 # Intended usage:
 #   curl -fsSL https://raw.githubusercontent.com/synapticloop/digitalocean-wireguard-vpn/main/install.sh | sudo bash
-# Or non-interactive/minimal-prompt:
+# Optionally provide a DNS name; otherwise the installer uses the server's public IPv4 address:
 #   curl -fsSL https://raw.githubusercontent.com/synapticloop/digitalocean-wireguard-vpn/main/install.sh | sudo WG_ADMIN_DOMAIN=wg.example.com bash
 
 DEFAULT_REPO_URL="https://github.com/synapticloop/digitalocean-wireguard-vpn.git"

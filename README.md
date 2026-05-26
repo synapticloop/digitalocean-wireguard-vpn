@@ -21,13 +21,15 @@ A Django + SQLite WireGuard administration panel for a single DigitalOcean Ubunt
 curl -fsSL https://raw.githubusercontent.com/synapticloop/digitalocean-wireguard-vpn/main/install.sh | sudo bash
 ```
 
-Non-interactive domain example:
+`WG_ADMIN_DOMAIN` is optional. If it is omitted, the installer detects the server's public IPv4 address and uses that for the WireGuard endpoint and admin URL.
+
+Optional domain example:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/synapticloop/digitalocean-wireguard-vpn/main/install.sh | sudo WG_ADMIN_DOMAIN=wg.example.com bash
 ```
 
-The installer bootstraps prerequisites such as `git`, clones the repository, then runs `scripts/bootstrap_ubuntu_2404.sh`.
+The installer bootstraps prerequisites such as `git`, clones the repository, then runs `scripts/bootstrap_ubuntu_2404.sh`. When a real domain is supplied, it attempts a Certbot HTTP-01 certificate. If certificate issuance fails, including IP-address installs, it creates a local self-signed HTTPS certificate so Nginx can still start on the WireGuard-only listener.
 
 ## First admin
 
@@ -36,6 +38,8 @@ The bootstrap creates `/root/wg-admin-first-client.conf` with permissions `0600`
 ```text
 https://wg.example.com
 ```
+
+If no domain was supplied during install, use `https://<server-public-ip>` instead.
 
 The web interface refuses non-VPN access at multiple layers:
 
