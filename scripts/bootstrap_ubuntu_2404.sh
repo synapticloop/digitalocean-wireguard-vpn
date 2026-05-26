@@ -115,7 +115,7 @@ sudo -u "$APP_USER" python3 -m venv "$APP_DIR/.venv"
 sudo -u "$APP_USER" "$APP_DIR/.venv/bin/pip" install --upgrade pip
 sudo -u "$APP_USER" "$APP_DIR/.venv/bin/pip" install -r "$APP_DIR/requirements.txt"
 sudo -u "$APP_USER" "$APP_DIR/.venv/bin/python" "$APP_DIR/manage.py" makemigrations --noinput
-sudo -u "$APP_USER" "$APP_DIR/.venv/bin/python" "$APP_DIR/manage.py" migrate
+sudo -u "$APP_USER" "$APP_DIR/.venv/bin/python" "$APP_DIR/manage.py" migrate --fake-initial
 sudo -u "$APP_USER" "$APP_DIR/.venv/bin/python" "$APP_DIR/manage.py" collectstatic --noinput
 SERVER_PRIVATE=$(wg genkey); SERVER_PUBLIC=$(printf '%s' "$SERVER_PRIVATE" | wg pubkey)
 ADMIN_PRIVATE=$(wg genkey); ADMIN_PUBLIC=$(printf '%s' "$ADMIN_PRIVATE" | wg pubkey)

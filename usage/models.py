@@ -26,3 +26,21 @@ class PeerUsageRuntimeState(models.Model):
     last_rx_bytes = models.BigIntegerField(default=0)
     last_tx_bytes = models.BigIntegerField(default=0)
     last_sampled_at = models.DateTimeField(null=True, blank=True)
+
+class DropletUsagePeriodTotal(models.Model):
+    period = models.OneToOneField(UsagePeriod, on_delete=models.CASCADE)
+    public_inbound_bytes = models.BigIntegerField(default=0)
+    public_outbound_bytes = models.BigIntegerField(default=0)
+    private_inbound_bytes = models.BigIntegerField(default=0)
+    private_outbound_bytes = models.BigIntegerField(default=0)
+    sample_count = models.PositiveIntegerField(default=0)
+    synced_at = models.DateTimeField(null=True, blank=True)
+
+    @property
+    def total_bytes(self):
+        return (
+            self.public_inbound_bytes
+            + self.public_outbound_bytes
+            + self.private_inbound_bytes
+            + self.private_outbound_bytes
+        )

@@ -1,1 +1,42 @@
-{% extends 'base.html' %}{% block content %}<h2>Usage</h2>{% if period %}<p>Current period: {{ period.period_start }} to {{ period.period_end }} ({{ period.source }})</p>{% endif %}<table><tr><th>User</th><th>Peer</th><th>VPN IP</th><th>Received by server</th><th>Sent by server</th></tr>{% for t in totals %}<tr><td>{{ t.peer.user.username }}</td><td>{{ t.peer.name }}</td><td>{{ t.peer.vpn_ipv4 }}</td><td>{{ t.rx_bytes }}</td><td>{{ t.tx_bytes }}</td></tr>{% endfor %}</table>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<h2>Usage</h2>
+{% if period %}
+<p>Current period: {{ period.period_start }} to {{ period.period_end }} ({{ period.source }})</p>
+{% endif %}
+
+<h3>DigitalOcean droplet</h3>
+{% if droplet_total %}
+<p>Last sync: {{ droplet_total.synced_at }} · Samples: {{ droplet_total.sample_count }} · Total: {{ droplet_total.total_bytes|filesizeformat }}</p>
+<table>
+  <tr><th>Public inbound</th><th>Public outbound</th><th>Private inbound</th><th>Private outbound</th></tr>
+  <tr>
+    <td>{{ droplet_total.public_inbound_bytes|filesizeformat }}</td>
+    <td>{{ droplet_total.public_outbound_bytes|filesizeformat }}</td>
+    <td>{{ droplet_total.private_inbound_bytes|filesizeformat }}</td>
+    <td>{{ droplet_total.private_outbound_bytes|filesizeformat }}</td>
+  </tr>
+</table>
+{% else %}
+<p>No DigitalOcean bandwidth sync has been stored for this period.</p>
+{% endif %}
+{% if digitalocean_settings.last_sync_error %}
+<p class="danger">Last DigitalOcean sync error: {{ digitalocean_settings.last_sync_error }}</p>
+{% endif %}
+
+<h3>WireGuard peers</h3>
+<table>
+  <tr><th>User</th><th>Peer</th><th>VPN IP</th><th>Received by server</th><th>Sent by server</th></tr>
+  {% for t in totals %}
+  <tr>
+    <td>{{ t.peer.user.username }}</td>
+    <td>{{ t.peer.name }}</td>
+    <td>{{ t.peer.vpn_ipv4 }}</td>
+    <td>{{ t.rx_bytes|filesizeformat }}</td>
+    <td>{{ t.tx_bytes|filesizeformat }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="5">No WireGuard usage has been stored for this period.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

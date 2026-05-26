@@ -1,6 +1,8 @@
+import calendar
 import subprocess
 from datetime import datetime, timezone as dt_timezone
 from django.db import transaction
+from django.db.utils import OperationalError, ProgrammingError
 from django.utils import timezone
 from peers.models import Peer
 from .models import UsagePeriod, PeerUsagePeriodTotal, PeerUsageRuntimeState
@@ -8,13 +10,37 @@ from .models import UsagePeriod, PeerUsagePeriodTotal, PeerUsageRuntimeState
 
 def current_utc_month_period():
     now = timezone.now()
-    start = datetime(now.year, now.month, 1, tzinfo=dt_timezone.utc)
-    end = datetime(now.year + (1 if now.month == 12 else 0), 1 if now.month == 12 else now.month + 1, 1, tzinfo=dt_timezone.utc)
+    try:
+        from integrations.models import DigitalOceanSettings
+        window_day = DigitalOceanSettings.get_solo().usage_window_override_day
+    except (OperationalError, ProgrammingError):
+        window_day = 1
+    window_day = min(max(int(window_day or 1), 1), 28)
+    start_year = now.year
+    start_month = now.month
+    if now.day < window_day:
+        if start_month == 1:
+            start_year -= 1
+            start_month = 12
+        else:
+            start_month -= 1
+    if start_month == 12:
+        end_year = start_year + 1
+        end_month = 1
+    else:
+        end_year = start_year
+        end_month = start_month + 1
+    start_day = min(window_day, calendar.monthrange(start_year, start_month)[1])
+    end_day = min(window_day, calendar.monthrange(end_year, end_month)[1])
+    start = datetime(start_year, start_month, start_day, tzinfo=dt_timezone.utc)
+    end = datetime(end_year, end_month, end_day, tzinfo=dt_timezone.utc)
+    source = 'utc_calendar_month' if window_day == 1 else f'manual_day_{window_day}'
     UsagePeriod.objects.exclude(period_start=start, period_end=end).filter(is_current=True).update(is_current=False)
-    period, _ = UsagePeriod.objects.get_or_create(provider='digitalocean', period_start=start, period_end=end, defaults={'is_current': True, 'source': 'utc_calendar_month'})
+    period, _ = UsagePeriod.objects.get_or_create(provider='digitalocean', period_start=start, period_end=end, defaults={'is_current': True, 'source': source})
     if not period.is_current:
         period.is_current = True
-        period.save(update_fields=['is_current'])
+        period.source = source
+        period.save(update_fields=['is_current', 'source'])
     return period
 
 

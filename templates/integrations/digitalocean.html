@@ -1,1 +1,8 @@
-{% extends 'base.html' %}{% block content %}<h2>DigitalOcean settings</h2><p>Token: {% if settings_obj.token_secret %}configured ({{ settings_obj.token_secret.token_hint }}){% else %}not configured{% endif %}</p><form method="post">{% csrf_token %}{{ form.as_p }}<button>Save</button></form>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<h2>DigitalOcean settings</h2>
+<p>Token: {% if settings_obj.token_secret %}configured ({{ settings_obj.token_secret.token_hint }}){% else %}not configured{% endif %}</p>
+<p>Last sync: {% if settings_obj.last_sync_at %}{{ settings_obj.last_sync_at }}{% else %}never{% endif %}</p>
+{% if settings_obj.last_sync_error %}<p class="danger">Last sync error: {{ settings_obj.last_sync_error }}</p>{% endif %}
+<form method="post">{% csrf_token %}{{ form.as_p }}<button>Save</button></form>
+{% endblock %}
