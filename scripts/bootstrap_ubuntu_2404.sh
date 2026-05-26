@@ -153,13 +153,20 @@ net.ipv4.ip_forward=1
 SYSCTL
 sysctl --system
 cp /etc/ufw/before.rules /etc/ufw/before.rules.wg-admin.bak || true
-if ! grep -q "WG-ADMIN NAT" /etc/ufw/before.rules; then sed -i "1i# WG-ADMIN NAT
+if ! grep -q "WG-ADMIN NAT" /etc/ufw/before.rules; then
+  UFW_BEFORE_TMP="$(mktemp)"
+  cat > "$UFW_BEFORE_TMP" <<UFW_NAT
+# WG-ADMIN NAT
 *nat
 :POSTROUTING ACCEPT [0:0]
 -A POSTROUTING -s 10.44.0.0/24 -o ${PUBLIC_IFACE} -j MASQUERADE
 COMMIT
 # END WG-ADMIN NAT
-" /etc/ufw/before.rules; fi
+UFW_NAT
+  cat /etc/ufw/before.rules >> "$UFW_BEFORE_TMP"
+  install -m 640 -o root -g root "$UFW_BEFORE_TMP" /etc/ufw/before.rules
+  rm -f "$UFW_BEFORE_TMP"
+fi
 sed -i 's/^DEFAULT_FORWARD_POLICY=.*/DEFAULT_FORWARD_POLICY="ACCEPT"/' /etc/default/ufw
 ufw --force reset; ufw default deny incoming; ufw default allow outgoing
 ufw allow ${WG_LISTEN_PORT}/udp
