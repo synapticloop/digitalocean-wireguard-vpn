@@ -1,9 +1,52 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>WG Admin</title>
-<style>body{font-family:system-ui,sans-serif;margin:2rem;max-width:1100px}nav a{margin-right:1rem}table{border-collapse:collapse;width:100%;margin-top:1rem}th,td{border-bottom:1px solid #ddd;padding:.5rem;text-align:left}.messages{padding:.5rem;background:#f4f4f4}pre,code{background:#f5f5f5;padding:.2rem .4rem}.danger{color:#b00020}.qr{max-width:320px;border:1px solid #ddd;padding:1rem}</style>
-</head><body>
-<h1>WG Admin</h1>
-<nav><a href="{% url 'dashboard' %}">Dashboard</a><a href="{% url 'user_list' %}">Users</a><a href="{% url 'usage_dashboard' %}">Usage</a><a href="{% url 'commit_config' %}">Commit</a><a href="{% url 'digitalocean_settings' %}">DigitalOcean</a><a href="{% url 'privacy_settings' %}">Privacy</a></nav>
-<p>Remote VPN IP: <code>{{ request.wg_remote_addr }}</code> · Identified user: <strong>{{ request.wg_user|default:'none' }}</strong></p>
-{% if messages %}<div class="messages">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>{% endif %}
-{% block content %}{% endblock %}</body></html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WireGuard VPN Admin</title>
+<style>
+:root{--ink:#0f172a;--muted:#516078;--line:#dbe3ee;--panel:#fff;--green:#0c9a43;--blue:#075bdc;--purple:#5a4ee6;--warn:#ffb020;--bg:#f4f7fb}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#ffffff 0%,#eef3f8 100%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit}
+table{width:100%;border-collapse:collapse}
+.app-shell{width:min(100%,430px);min-height:100vh;margin:0 auto;background:#f8fbff;border-left:1px solid var(--line);border-right:1px solid var(--line);box-shadow:0 18px 50px rgba(15,23,42,.12);position:relative;padding-bottom:84px}
+.topbar{height:76px;padding:14px 20px;display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.92);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:4;backdrop-filter:blur(12px)}
+.brand-mark{width:44px;height:44px;border-radius:14px;background:linear-gradient(160deg,#0ba84b,#0b6f35);color:#fff;display:grid;place-items:center;font-weight:900;font-size:24px;box-shadow:0 10px 22px rgba(12,154,67,.26)}
+.brand-title{line-height:1.05;flex:1;min-width:0}.brand-title h1{font-size:24px;margin:0;font-weight:850;letter-spacing:0}.vpn-dot{display:inline-flex;align-items:center;gap:7px;color:var(--green);font-size:14px;font-weight:800;margin-top:6px}.vpn-dot:before{content:"";width:10px;height:10px;border-radius:50%;background:var(--green)}
+.menu-button{width:42px;height:42px;border:0;background:transparent;display:grid;gap:5px;align-content:center;padding:7px}.menu-button span{height:4px;border-radius:999px;background:#0f172a;box-shadow:0 1px 2px rgba(15,23,42,.25)}
+.content{padding:12px 10px 18px}.messages{margin:0 0 10px;padding:10px 12px;border:1px solid #cfe1ff;background:#eff6ff;border-radius:8px;color:#164c9f}.messages p{margin:0 0 6px}.messages p:last-child{margin-bottom:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 7px 18px rgba(15,23,42,.08);overflow:hidden}.section{margin-top:10px}.section-pad{padding:14px 10px}.section-title{font-size:20px;line-height:1.1;margin:0;font-weight:850}
+.muted{color:var(--muted)}.danger{color:#b42318}.success{color:var(--green)}.small{font-size:12px}.strong{font-weight:850}
+.bottom-nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(100%,430px);height:72px;background:rgba(255,255,255,.95);border:1px solid var(--line);border-bottom:0;display:grid;grid-template-columns:repeat(5,1fr);box-shadow:0 -10px 30px rgba(15,23,42,.08);z-index:6}
+.bottom-nav a{display:grid;place-items:center;color:#435168;font-size:12px;font-weight:700;padding:8px 0}.bottom-nav a:first-child{color:var(--blue)}.nav-ico{font-size:23px;line-height:1}
+.form-page{padding:16px 10px}.form-page h2{margin:0 0 12px}.form-page form{background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px}.form-page input,.form-page textarea,.form-page select{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px}.form-page button,.primary-button{border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:850;padding:12px 16px}.form-page table th,.form-page table td{border-bottom:1px solid var(--line);padding:10px 6px;text-align:left}
+pre,code{background:#eef3f8;border-radius:6px;padding:2px 5px}.qr{max-width:260px;border:1px solid var(--line);padding:12px;border-radius:8px;background:#fff}
+@media (min-width:700px){body{padding:14px 0}.app-shell{min-height:calc(100vh - 28px);border-radius:22px;border:1px solid var(--line);overflow:hidden}.bottom-nav{bottom:14px;border-radius:0 0 22px 22px}}
+</style>
+</head>
+<body>
+<main class="app-shell">
+  <header class="topbar">
+    <div class="brand-mark">+</div>
+    <div class="brand-title">
+      <h1>WireGuard VPN Admin</h1>
+      <div class="vpn-dot">VPN only access</div>
+    </div>
+    <button class="menu-button" aria-label="Menu"><span></span><span></span><span></span></button>
+  </header>
+  <div class="content">
+    {% if messages %}<div class="messages">{% for message in messages %}<p>{{ message }}</p>{% endfor %}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </div>
+  <nav class="bottom-nav" aria-label="Primary">
+    <a href="{% url 'dashboard' %}"><span class="nav-ico">⌂</span><span>Dashboard</span></a>
+    <a href="{% url 'user_list' %}"><span class="nav-ico">••</span><span>Peers</span></a>
+    <a href="{% url 'commit_config' %}"><span class="nav-ico">◆</span><span>Access</span></a>
+    <a href="{% url 'usage_dashboard' %}"><span class="nav-ico">▮</span><span>Usage</span></a>
+    <a href="{% url 'privacy_settings' %}"><span class="nav-ico">⚙</span><span>Settings</span></a>
+  </nav>
+</main>
+</body>
+</html>

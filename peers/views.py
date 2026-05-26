@@ -2,6 +2,7 @@ import base64
 from io import BytesIO
 import qrcode
 from django.contrib import messages
+from django.db.models import Sum
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -9,6 +10,7 @@ from accounts.models import User
 from .forms import UserCreateForm, PeerCreateForm
 from .models import Peer, record_audit
 from .services import next_available_ipv4, wg_genkey, build_client_config
+from usage.models import PeerUsagePeriodTotal
 from usage.services import current_utc_month_period, user_period_bytes, user_over_limit
 
 
@@ -27,8 +29,60 @@ def config_qr_data_uri(config_text):
 
 
 def dashboard(request):
-    peers = Peer.objects.select_related('user').order_by('vpn_ipv4')
-    return render(request, 'peers/dashboard.html', {'peers': peers})
+    period = current_utc_month_period()
+    peers = list(Peer.objects.select_related('user').order_by('vpn_ipv4'))
+    totals = {
+        row['peer_id']: (row['rx'] or 0) + (row['tx'] or 0)
+        for row in PeerUsagePeriodTotal.objects.filter(period=period).values('peer_id').annotate(rx=Sum('rx_bytes'), tx=Sum('tx_bytes'))
+    }
+    peer_rows = []
+    for peer in peers:
+        if peer.user.is_vpn_admin:
+            status = 'Admin'
+        elif not peer.enabled or not peer.user.is_active:
+            status = 'Disabled'
+        elif user_over_limit(peer.user, period):
+            status = 'Limited'
+        else:
+            status = 'Active'
+        peer_rows.append({
+            'peer': peer,
+            'usage_bytes': totals.get(peer.id, 0),
+            'status': status,
+            'initial': (peer.name or peer.user.username or '?')[:1].upper(),
+        })
+
+    total_usage = sum(totals.values())
+    configured_limits = [u.usage_limit_bytes for u in User.objects.filter(usage_limit_bytes__isnull=False)]
+    total_limit = sum(configured_limits) if configured_limits else None
+    usage_percent = min(int((total_usage / total_limit) * 100), 100) if total_limit else 0
+    admins = User.objects.filter(is_active=True, is_vpn_admin=True).count()
+    active_peers = Peer.objects.filter(enabled=True, user__is_active=True).count()
+    setup_peer = next((peer for peer in peers if peer.one_time_client_config), None)
+    setup_qr_data_uri = config_qr_data_uri(setup_peer.one_time_client_config) if setup_peer else ''
+    usage_rows = sorted(peer_rows, key=lambda row: row['usage_bytes'], reverse=True)
+    max_usage = max([row['usage_bytes'] for row in usage_rows] + [1])
+    for row in usage_rows:
+        row['usage_percent'] = int((row['usage_bytes'] / max_usage) * 100)
+    top_usage_rows = usage_rows[:4]
+    other_usage_bytes = sum(row['usage_bytes'] for row in usage_rows[4:])
+    other_usage_percent = int((other_usage_bytes / max_usage) * 100) if other_usage_bytes else 0
+
+    return render(request, 'peers/dashboard.html', {
+        'period': period,
+        'peer_rows': peer_rows,
+        'active_peers': active_peers,
+        'total_peers': len(peers),
+        'admins': admins,
+        'total_usage': total_usage,
+        'total_limit': total_limit,
+        'usage_percent': usage_percent,
+        'setup_peer': setup_peer,
+        'setup_qr_data_uri': setup_qr_data_uri,
+        'top_usage_rows': top_usage_rows,
+        'other_usage_bytes': other_usage_bytes,
+        'other_usage_percent': other_usage_percent,
+    })
 
 
 def user_list(request):
