@@ -40,7 +40,7 @@ DEFAULT_WG_ADMIN_DOMAIN="${WG_ADMIN_DOMAIN:-}"
 if [[ -z "$DEFAULT_WG_ADMIN_DOMAIN" ]]; then
   DEFAULT_WG_ADMIN_DOMAIN="$(detect_external_ipv4 || true)"
 fi
-if [[ -z "$WG_ADMIN_DOMAIN" && -z "$DEFAULT_WG_ADMIN_DOMAIN" ]]; then
+if [[ -z "${WG_ADMIN_DOMAIN:-}" && -z "$DEFAULT_WG_ADMIN_DOMAIN" ]]; then
   echo "WG_ADMIN_DOMAIN is not set and the installer could not detect an external IPv4 address." >&2
   echo "Set WG_ADMIN_DOMAIN=wg.example.com or WG_ADMIN_DOMAIN=<server-public-ip> and rerun the installer." >&2
   exit 1
