@@ -74,7 +74,13 @@ mkdir -p "$APP_DIR" "$WG_APP_DATA_DIR" /run/wg-admin /etc/wireguard
 chown -R "$APP_USER:$APP_USER" "$APP_DIR" "$WG_APP_DATA_DIR" /run/wg-admin
 chmod 700 /run/wg-admin
 chmod 700 /etc/wireguard
-if [[ ! -d "$APP_DIR/.git" ]]; then git clone --branch "$APP_REPO_BRANCH" "$APP_REPO_URL" "$APP_DIR"; else git -C "$APP_DIR" fetch origin; git -C "$APP_DIR" checkout "$APP_REPO_BRANCH"; git -C "$APP_DIR" pull --ff-only; fi
+if [[ ! -d "$APP_DIR/.git" ]]; then
+  sudo -u "$APP_USER" git clone --branch "$APP_REPO_BRANCH" "$APP_REPO_URL" "$APP_DIR"
+else
+  sudo -u "$APP_USER" git -C "$APP_DIR" fetch origin
+  sudo -u "$APP_USER" git -C "$APP_DIR" checkout "$APP_REPO_BRANCH"
+  sudo -u "$APP_USER" git -C "$APP_DIR" pull --ff-only
+fi
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 python3 - <<'PY' > /tmp/wg_fernet_key
 from cryptography.fernet import Fernet
