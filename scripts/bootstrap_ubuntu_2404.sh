@@ -71,7 +71,8 @@ apt-get purge -y ubuntu-report popularity-contest apport whoopsie apport-symptom
 apt-mark hold ubuntu-report popularity-contest apport whoopsie apport-symptoms || true
 id -u "$APP_USER" >/dev/null 2>&1 || useradd --system --home "$APP_DIR" --shell /usr/sbin/nologin "$APP_USER"
 mkdir -p "$APP_DIR" "$WG_APP_DATA_DIR" /run/wg-admin /etc/wireguard
-chown -R "$APP_USER:$APP_USER" "$APP_DIR" "$WG_APP_DATA_DIR"
+chown -R "$APP_USER:$APP_USER" "$APP_DIR" "$WG_APP_DATA_DIR" /run/wg-admin
+chmod 700 /run/wg-admin
 chmod 700 /etc/wireguard
 if [[ ! -d "$APP_DIR/.git" ]]; then git clone --branch "$APP_REPO_BRANCH" "$APP_REPO_URL" "$APP_DIR"; else git -C "$APP_DIR" fetch origin; git -C "$APP_DIR" checkout "$APP_REPO_BRANCH"; git -C "$APP_DIR" pull --ff-only; fi
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
