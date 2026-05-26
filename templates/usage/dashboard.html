@@ -1,42 +1,50 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Usage</h2>
-{% if period %}
-<p>Current period: {{ period.period_start }} to {{ period.period_end }} ({{ period.source }})</p>
-{% endif %}
+<div class="page-head">
+  <div>
+    <h2>Usage</h2>
+    {% if period %}<p class="page-sub">{{ period.period_start }} to {{ period.period_end }} · {{ period.source }}</p>{% endif %}
+  </div>
+</div>
 
-<h3>DigitalOcean droplet</h3>
-{% if droplet_total %}
-<p>Last sync: {{ droplet_total.synced_at }} · Samples: {{ droplet_total.sample_count }} · Total: {{ droplet_total.total_bytes|filesizeformat }}</p>
-<table>
-  <tr><th>Public inbound</th><th>Public outbound</th><th>Private inbound</th><th>Private outbound</th></tr>
-  <tr>
-    <td>{{ droplet_total.public_inbound_bytes|filesizeformat }}</td>
-    <td>{{ droplet_total.public_outbound_bytes|filesizeformat }}</td>
-    <td>{{ droplet_total.private_inbound_bytes|filesizeformat }}</td>
-    <td>{{ droplet_total.private_outbound_bytes|filesizeformat }}</td>
-  </tr>
-</table>
-{% else %}
-<p>No DigitalOcean bandwidth sync has been stored for this period.</p>
-{% endif %}
-{% if digitalocean_settings.last_sync_error %}
-<p class="danger">Last DigitalOcean sync error: {{ digitalocean_settings.last_sync_error }}</p>
-{% endif %}
+<section class="mobile-card mobile-card-pad">
+  <div class="page-head">
+    <div>
+      <h2 class="section-title">DigitalOcean droplet</h2>
+      <p class="page-sub">Aggregate provider bandwidth for the current period.</p>
+    </div>
+    {% if droplet_total %}<span class="pill blue">{{ droplet_total.total_bytes|filesizeformat }}</span>{% endif %}
+  </div>
+  {% if droplet_total %}
+  <div class="metric-pair">
+    <div class="mini-stat"><div class="mini-stat-label">Public inbound</div><div class="mini-stat-value">{{ droplet_total.public_inbound_bytes|filesizeformat }}</div></div>
+    <div class="mini-stat"><div class="mini-stat-label">Public outbound</div><div class="mini-stat-value">{{ droplet_total.public_outbound_bytes|filesizeformat }}</div></div>
+    <div class="mini-stat"><div class="mini-stat-label">Private inbound</div><div class="mini-stat-value">{{ droplet_total.private_inbound_bytes|filesizeformat }}</div></div>
+    <div class="mini-stat"><div class="mini-stat-label">Private outbound</div><div class="mini-stat-value">{{ droplet_total.private_outbound_bytes|filesizeformat }}</div></div>
+  </div>
+  <p class="page-sub">Last sync: {{ droplet_total.synced_at }} · Samples: {{ droplet_total.sample_count }}</p>
+  {% else %}
+  <p class="page-sub">No DigitalOcean bandwidth sync has been stored for this period.</p>
+  {% endif %}
+  {% if digitalocean_settings.last_sync_error %}<p class="danger">Last DigitalOcean sync error: {{ digitalocean_settings.last_sync_error }}</p>{% endif %}
+</section>
 
-<h3>WireGuard peers</h3>
-<table>
-  <tr><th>User</th><th>Peer</th><th>VPN IP</th><th>Received by server</th><th>Sent by server</th></tr>
+<section class="mobile-card section">
+  <div class="mobile-card-pad"><h2 class="section-title">WireGuard peers</h2></div>
   {% for t in totals %}
-  <tr>
-    <td>{{ t.peer.user.username }}</td>
-    <td>{{ t.peer.name }}</td>
-    <td>{{ t.peer.vpn_ipv4 }}</td>
-    <td>{{ t.rx_bytes|filesizeformat }}</td>
-    <td>{{ t.tx_bytes|filesizeformat }}</td>
-  </tr>
+  <div class="row-card">
+    <div class="row-icon">{{ t.peer.name|slice:":1"|upper }}</div>
+    <div>
+      <div class="row-title">{{ t.peer.name }}</div>
+      <div class="row-meta">{{ t.peer.user.username }} · {{ t.peer.vpn_ipv4 }}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="strong">{{ t.rx_bytes|filesizeformat }}</div>
+      <div class="row-meta">{{ t.tx_bytes|filesizeformat }} sent</div>
+    </div>
+  </div>
   {% empty %}
-  <tr><td colspan="5">No WireGuard usage has been stored for this period.</td></tr>
+  <div class="mobile-card-pad"><p class="page-sub">No WireGuard usage has been stored for this period.</p></div>
   {% endfor %}
-</table>
+</section>
 {% endblock %}

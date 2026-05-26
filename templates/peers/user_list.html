@@ -1,1 +1,38 @@
-{% extends 'base.html' %}{% block content %}<h2>Users</h2><p><a href="{% url 'user_add' %}">Add user</a></p><table><tr><th>Username</th><th>Admin</th><th>Active</th><th>Usage</th><th>Limit</th><th>Status</th></tr>{% for row in rows %}<tr><td><a href="{% url 'user_detail' row.user.id %}">{{ row.user.username }}</a></td><td>{{ row.user.is_vpn_admin }}</td><td>{{ row.user.is_active }}</td><td>{{ row.used_bytes|filesizeformat }}</td><td>{% if row.user.usage_limit_bytes %}{{ row.user.usage_limit_bytes|filesizeformat }}{% else %}Unlimited{% endif %}</td><td>{% if row.over_limit %}<span class="danger">Over limit</span>{% else %}OK{% endif %}</td></tr>{% endfor %}</table>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>Peers</h2>
+    <p class="page-sub">Users, admin access, limits, and current-period usage.</p>
+  </div>
+  <a class="link-button" href="{% url 'user_add' %}">Add user</a>
+</div>
+
+<section class="mobile-card">
+  {% for row in rows %}
+  <a class="row-card" href="{% url 'user_detail' row.user.id %}">
+    <div class="row-icon">{{ row.user.username|slice:":1"|upper }}</div>
+    <div>
+      <div class="row-title">{{ row.user.username }}</div>
+      <div class="row-meta">
+        {{ row.used_bytes|filesizeformat }} used ·
+        {% if row.user.usage_limit_bytes %}{{ row.user.usage_limit_bytes|filesizeformat }} limit{% else %}Unlimited{% endif %}
+      </div>
+    </div>
+    <div>
+      {% if row.over_limit %}
+      <span class="pill amber">Over limit</span>
+      {% elif row.user.is_vpn_admin %}
+      <span class="pill blue">Admin</span>
+      {% elif row.user.is_active %}
+      <span class="pill green">Active</span>
+      {% else %}
+      <span class="pill gray">Inactive</span>
+      {% endif %}
+    </div>
+  </a>
+  {% empty %}
+  <div class="mobile-card-pad"><p class="page-sub">No users have been created yet.</p></div>
+  {% endfor %}
+</section>
+{% endblock %}

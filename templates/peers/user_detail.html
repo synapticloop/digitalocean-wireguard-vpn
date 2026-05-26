@@ -1,1 +1,57 @@
-{% extends 'base.html' %}{% block content %}<h2>{{ target_user.username }}</h2><p>Admin: {{ target_user.is_vpn_admin }} · Active: {{ target_user.is_active }} · Usage: {{ used_bytes|filesizeformat }} / {% if target_user.usage_limit_bytes %}{{ target_user.usage_limit_bytes|filesizeformat }}{% else %}Unlimited{% endif %} {% if over_limit %}<span class="danger">OVER LIMIT</span>{% endif %}</p><p><a href="{% url 'user_edit' target_user.id %}">Edit user/limit</a> · <a href="{% url 'peer_add' target_user.id %}">Add peer/device</a></p><table><tr><th>Name</th><th>VPN IP</th><th>Enabled</th><th>Config</th><th>Action</th></tr>{% for peer in target_user.peers.all %}<tr><td>{{ peer.name }}</td><td>{{ peer.vpn_ipv4 }}</td><td>{{ peer.enabled }}</td><td>{% if peer.one_time_client_config %}<a href="{% url 'peer_setup' peer.id %}">QR/setup page</a>{% elif peer.one_time_config_downloaded_at %}Downloaded{% else %}-{% endif %}</td><td>{% if peer.enabled %}<form method="post" action="{% url 'peer_disable' peer.id %}">{% csrf_token %}<button>Disable</button></form>{% endif %}</td></tr>{% endfor %}</table>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>{{ target_user.username }}</h2>
+    <p class="page-sub">{% if target_user.is_vpn_admin %}VPN admin{% else %}Standard user{% endif %} · {% if target_user.is_active %}Active{% else %}Inactive{% endif %}</p>
+  </div>
+  {% if over_limit %}<span class="pill amber">Over limit</span>{% else %}<span class="pill green">OK</span>{% endif %}
+</div>
+
+<section class="metric-pair">
+  <div class="mini-stat">
+    <div class="mini-stat-label">Current usage</div>
+    <div class="mini-stat-value">{{ used_bytes|filesizeformat }}</div>
+  </div>
+  <div class="mini-stat">
+    <div class="mini-stat-label">Limit</div>
+    <div class="mini-stat-value">{% if target_user.usage_limit_bytes %}{{ target_user.usage_limit_bytes|filesizeformat }}{% else %}Unlimited{% endif %}</div>
+  </div>
+</section>
+
+<div class="action-row section">
+  <a class="link-button" href="{% url 'peer_add' target_user.id %}">Add peer</a>
+  <a class="link-button secondary" href="{% url 'user_edit' target_user.id %}">Edit user</a>
+</div>
+
+<section class="mobile-card section">
+  {% for peer in target_user.peers.all %}
+  <div class="row-card">
+    <div class="row-icon">{{ peer.name|slice:":1"|upper }}</div>
+    <div>
+      <div class="row-title">{{ peer.name }}</div>
+      <div class="row-meta">{{ peer.vpn_ipv4 }} · Handshake {{ peer.latest_handshake_at|date:"M j, H:i"|default:"-" }}</div>
+      <div class="row-meta">
+        {% if peer.one_time_client_config %}
+        <a class="strong" href="{% url 'peer_setup' peer.id %}">QR/setup page</a>
+        {% elif peer.one_time_config_downloaded_at %}
+        Config downloaded
+        {% else %}
+        No pending config
+        {% endif %}
+      </div>
+    </div>
+    <div>
+      {% if peer.enabled %}
+      <span class="pill green">Enabled</span>
+      <form method="post" action="{% url 'peer_disable' peer.id %}" style="margin-top:8px">{% csrf_token %}<button class="link-button danger" type="submit">Disable</button></form>
+      {% else %}
+      <span class="pill gray">Disabled</span>
+      {% endif %}
+    </div>
+  </div>
+  {% empty %}
+  <div class="mobile-card-pad"><p class="page-sub">No peers have been added for this user.</p></div>
+  {% endfor %}
+</section>
+{% endblock %}

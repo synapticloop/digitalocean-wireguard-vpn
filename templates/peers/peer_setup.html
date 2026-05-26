@@ -1,1 +1,22 @@
-{% extends 'base.html' %}{% block content %}<h2>Set up {{ peer.user.username }} / {{ peer.name }}</h2><p>Scan this QR code with the WireGuard mobile app, or download the config file. The private key is shown only while this one-time config remains available.</p><p><img class="qr" src="{{ qr_data_uri }}" alt="WireGuard client config QR code"></p><p><a href="{% url 'peer_client_config_download' peer.id %}">Download .conf and consume one-time config</a></p><h3>Client config</h3><pre>{{ config_text }}</pre><p><a href="{% url 'user_detail' peer.user.id %}">Back to user</a></p>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>Set up {{ peer.name }}</h2>
+    <p class="page-sub">{{ peer.user.username }} · {{ peer.vpn_ipv4 }}</p>
+  </div>
+  <span class="pill amber">One time</span>
+</div>
+
+<section class="mobile-card mobile-card-pad" style="text-align:center">
+  <p class="page-sub">Scan this QR code with the WireGuard mobile app. The private key is shown only while this setup page remains available.</p>
+  <p><img class="qr" src="{{ qr_data_uri }}" alt="WireGuard client config QR code"></p>
+  <a class="link-button" href="{% url 'peer_client_config_download' peer.id %}">Download .conf</a>
+</section>
+
+<section class="mobile-card mobile-card-pad section">
+  <h3 class="section-title">Client config</h3>
+  <pre class="code-block">{{ config_text }}</pre>
+  <a class="link-button secondary" href="{% url 'user_detail' peer.user.id %}">Back to user</a>
+</section>
+{% endblock %}

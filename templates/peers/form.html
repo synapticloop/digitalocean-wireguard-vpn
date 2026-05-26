@@ -1,1 +1,17 @@
-{% extends 'base.html' %}{% block content %}<h2>{{ title }}</h2><form method="post">{% csrf_token %}{{ form.as_p }}<button>Save</button></form>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>{{ title }}</h2>
+    <p class="page-sub">Changes are saved to SQLite and applied to WireGuard after a config commit.</p>
+  </div>
+</div>
+
+<section class="mobile-card mobile-card-pad">
+  <form class="mobile-form" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="link-button" type="submit">Save</button>
+  </form>
+</section>
+{% endblock %}

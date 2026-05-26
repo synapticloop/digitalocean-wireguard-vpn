@@ -1,8 +1,26 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>DigitalOcean settings</h2>
-<p>Token: {% if settings_obj.token_secret %}configured ({{ settings_obj.token_secret.token_hint }}){% else %}not configured{% endif %}</p>
-<p>Last sync: {% if settings_obj.last_sync_at %}{{ settings_obj.last_sync_at }}{% else %}never{% endif %}</p>
-{% if settings_obj.last_sync_error %}<p class="danger">Last sync error: {{ settings_obj.last_sync_error }}</p>{% endif %}
-<form method="post">{% csrf_token %}{{ form.as_p }}<button>Save</button></form>
+<div class="page-head">
+  <div>
+    <h2>DigitalOcean</h2>
+    <p class="page-sub">Provider metrics and droplet identity.</p>
+  </div>
+  {% if settings_obj.token_secret %}<span class="pill green">Configured</span>{% else %}<span class="pill gray">No token</span>{% endif %}
+</div>
+
+<section class="mobile-card mobile-card-pad">
+  <div class="metric-pair">
+    <div class="mini-stat"><div class="mini-stat-label">Token</div><div class="mini-stat-value">{% if settings_obj.token_secret %}{{ settings_obj.token_secret.token_hint }}{% else %}None{% endif %}</div></div>
+    <div class="mini-stat"><div class="mini-stat-label">Last sync</div><div class="mini-stat-value">{% if settings_obj.last_sync_at %}{{ settings_obj.last_sync_at|date:"M j, H:i" }}{% else %}Never{% endif %}</div></div>
+  </div>
+  {% if settings_obj.last_sync_error %}<p class="danger">Last sync error: {{ settings_obj.last_sync_error }}</p>{% endif %}
+</section>
+
+<section class="mobile-card mobile-card-pad section">
+  <form class="mobile-form" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="link-button" type="submit">Save settings</button>
+  </form>
+</section>
 {% endblock %}

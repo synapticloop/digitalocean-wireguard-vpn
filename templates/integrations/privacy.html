@@ -1,1 +1,21 @@
-{% extends 'base.html' %}{% block content %}<h2>Privacy settings</h2><p>Disable persistent logs if this appliance should avoid retaining operational history. Current WireGuard in-memory state may still be visible through <code>wg show</code> while the interface is running.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button>Save</button></form>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>Privacy</h2>
+    <p class="page-sub">Control which operational records are persisted.</p>
+  </div>
+</div>
+
+<section class="notice">
+  Current WireGuard runtime state may still be visible through <code>wg show</code> while the interface is running.
+</section>
+
+<section class="mobile-card mobile-card-pad section">
+  <form class="mobile-form" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="link-button" type="submit">Save privacy settings</button>
+  </form>
+</section>
+{% endblock %}

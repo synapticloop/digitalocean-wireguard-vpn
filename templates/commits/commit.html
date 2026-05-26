@@ -1,1 +1,35 @@
-{% extends 'base.html' %}{% block content %}<h2>Commit WireGuard config</h2><form method="post">{% csrf_token %}<button>Generate, validate and apply config</button></form><h3>Recent commits</h3><table><tr><th>Time</th><th>Actor</th><th>Status</th><th>Summary</th><th>Error</th></tr>{% for c in commits %}<tr><td>{{ c.created_at }}</td><td>{{ c.actor }}</td><td>{{ c.status }}</td><td><pre>{{ c.summary }}</pre></td><td><pre class="danger">{{ c.error }}</pre></td></tr>{% endfor %}</table>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h2>Access</h2>
+    <p class="page-sub">Generate, validate, and apply the WireGuard config.</p>
+  </div>
+</div>
+
+<section class="mobile-card mobile-card-pad">
+  <form method="post">
+    {% csrf_token %}
+    <button class="link-button" type="submit">Commit WireGuard config</button>
+  </form>
+</section>
+
+<section class="mobile-card section">
+  <div class="mobile-card-pad"><h2 class="section-title">Recent commits</h2></div>
+  {% for c in commits %}
+  <div class="mobile-card-pad" style="border-top:1px solid var(--line)">
+    <div class="page-head">
+      <div>
+        <div class="row-title">{{ c.created_at|date:"M j, H:i" }}</div>
+        <div class="row-meta">Actor: {{ c.actor|default:"system" }}</div>
+      </div>
+      {% if c.status == 'success' %}<span class="pill green">Success</span>{% else %}<span class="pill amber">{{ c.status }}</span>{% endif %}
+    </div>
+    {% if c.summary %}<pre class="code-block">{{ c.summary }}</pre>{% endif %}
+    {% if c.error %}<pre class="code-block danger">{{ c.error }}</pre>{% endif %}
+  </div>
+  {% empty %}
+  <div class="mobile-card-pad"><p class="page-sub">No config commits have been recorded.</p></div>
+  {% endfor %}
+</section>
+{% endblock %}
