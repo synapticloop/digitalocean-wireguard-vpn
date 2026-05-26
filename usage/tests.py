@@ -1,3 +1,4 @@
+from datetime import datetime, timezone as dt_timezone
 from unittest.mock import patch
 
 from django.test import TestCase
@@ -16,12 +17,46 @@ class WireGuardUsageCollectionTests(TestCase):
         PrivacySettings.get_solo()
 
         with patch('usage.services.parse_wg_transfer', return_value=[('pubkey1', 100, 200)]):
-            self.assertEqual(collect_usage('wg0'), 1)
+            with patch('usage.services.parse_wg_handshakes', return_value=[]):
+                self.assertEqual(collect_usage('wg0'), 1)
         with patch('usage.services.parse_wg_transfer', return_value=[('pubkey1', 150, 250)]):
-            self.assertEqual(collect_usage('wg0'), 1)
+            with patch('usage.services.parse_wg_handshakes', return_value=[]):
+                self.assertEqual(collect_usage('wg0'), 1)
         with patch('usage.services.parse_wg_transfer', return_value=[('pubkey1', 10, 20)]):
-            self.assertEqual(collect_usage('wg0'), 1)
+            with patch('usage.services.parse_wg_handshakes', return_value=[]):
+                self.assertEqual(collect_usage('wg0'), 1)
 
         total = PeerUsagePeriodTotal.objects.get(period=current_utc_month_period(), peer=peer)
         self.assertEqual(total.rx_bytes, 160)
         self.assertEqual(total.tx_bytes, 270)
+
+    def test_collect_usage_updates_latest_handshake(self):
+        user = User.objects.create_user(username='alice', is_active=True)
+        peer = Peer.objects.create(user=user, name='phone', public_key='pubkey1', vpn_ipv4='10.44.0.9')
+        PrivacySettings.get_solo()
+
+        with patch('usage.services.parse_wg_transfer', return_value=[('pubkey1', 100, 200)]):
+            with patch('usage.services.parse_wg_handshakes', return_value=[('pubkey1', 1_700_000_000)]):
+                self.assertEqual(collect_usage('wg0'), 1)
+
+        peer.refresh_from_db()
+        self.assertEqual(peer.latest_handshake_at, datetime.fromtimestamp(1_700_000_000, tz=dt_timezone.utc))
+
+    def test_collect_usage_does_not_clear_latest_handshake_on_zero(self):
+        existing = datetime.fromtimestamp(1_700_000_000, tz=dt_timezone.utc)
+        user = User.objects.create_user(username='alice', is_active=True)
+        peer = Peer.objects.create(
+            user=user,
+            name='phone',
+            public_key='pubkey1',
+            vpn_ipv4='10.44.0.9',
+            latest_handshake_at=existing,
+        )
+        PrivacySettings.get_solo()
+
+        with patch('usage.services.parse_wg_transfer', return_value=[('pubkey1', 100, 200)]):
+            with patch('usage.services.parse_wg_handshakes', return_value=[('pubkey1', 0)]):
+                self.assertEqual(collect_usage('wg0'), 1)
+
+        peer.refresh_from_db()
+        self.assertEqual(peer.latest_handshake_at, existing)

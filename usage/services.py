@@ -52,6 +52,18 @@ def parse_wg_transfer(interface='wg0'):
             yield parts[0], int(parts[1]), int(parts[2])
 
 
+def parse_wg_handshakes(interface='wg0'):
+    output = subprocess.check_output(['wg', 'show', interface, 'dump'], text=True)
+    for line in output.splitlines()[1:]:
+        parts = line.split()
+        if len(parts) >= 5:
+            try:
+                handshake_epoch = int(parts[4])
+            except ValueError:
+                continue
+            yield parts[0], handshake_epoch
+
+
 def user_period_bytes(user, period=None):
     period = period or current_utc_month_period()
     qs = PeerUsagePeriodTotal.objects.filter(period=period, peer__user=user)
@@ -72,11 +84,18 @@ def collect_usage(interface='wg0'):
     period = current_utc_month_period()
     now = timezone.now()
     seen = 0
+    handshakes = dict(parse_wg_handshakes(interface))
     for public_key, rx, tx in parse_wg_transfer(interface):
         try:
             peer = Peer.objects.get(public_key=public_key)
         except Peer.DoesNotExist:
             continue
+        handshake_epoch = handshakes.get(public_key, 0)
+        if handshake_epoch > 0:
+            handshake_at = datetime.fromtimestamp(handshake_epoch, tz=dt_timezone.utc)
+            if peer.latest_handshake_at is None or handshake_at > peer.latest_handshake_at:
+                peer.latest_handshake_at = handshake_at
+                peer.save(update_fields=['latest_handshake_at'])
         state, _ = PeerUsageRuntimeState.objects.get_or_create(peer=peer)
         delta_rx = rx - state.last_rx_bytes if rx >= state.last_rx_bytes else rx
         delta_tx = tx - state.last_tx_bytes if tx >= state.last_tx_bytes else tx
