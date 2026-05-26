@@ -146,6 +146,7 @@ AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 CLIENTCONF
 chmod 600 /root/wg-admin-first-client.conf
+qrencode -t ansiutf8 < /root/wg-admin-first-client.conf
 sudo -u "$APP_USER" "$APP_DIR/.venv/bin/python" "$APP_DIR/manage.py" shell -c "from commits.services import write_candidate; print(write_candidate())"
 install -m 600 -o root -g root "$WG_CANDIDATE_PATH" /etc/wireguard/wg0.conf
 cat > /etc/sysctl.d/99-wg-admin.conf <<SYSCTL
